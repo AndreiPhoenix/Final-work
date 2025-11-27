@@ -1,6 +1,10 @@
-DROP TABLE IF EXISTS bank_accounts;
-
-CREATE TABLE bank_accounts (
-                               account_number VARCHAR(20) PRIMARY KEY,
-                               balance DOUBLE NOT NULL
+CREATE TABLE IF NOT EXISTS currency_rates (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    currency_name VARCHAR(255) NOT NULL,
+    currency_code VARCHAR(10) NOT NULL,
+    rate_to_rub DOUBLE NOT NULL,
+    rate_to_usd DOUBLE,
+    change_24h DOUBLE NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    timestamp TIMESTAMP NOT NULL
 );

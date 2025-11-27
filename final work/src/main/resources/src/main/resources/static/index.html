@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Parser API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 4px solid #3498db;
+            border-radius: 4px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            color: white;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .get { background: #28a745; }
+        .post { background: #007bff; }
+        .test-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>💰 Currency Parser API</h1>
+    <p>Многопоточное веб-приложение для парсинга курсов валют</p>
+
+    <h2>📊 Доступные эндпоинты:</h2>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <strong>/api/currency/rates</strong> - Все курсы валют
+        <br>
+        <small>Параметры: sortBy (currencyName, rate, change, timestamp), order (asc, desc)</small>
+        <button class="test-btn" onclick="testEndpoint('GET', '/api/currency/rates')">Тест</button>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <strong>/api/currency/rates/{code}</strong> - Курсы по валюте
+        <br>
+        <small>Пример: /api/currency/rates/USD</small>
+        <button class="test-btn" onclick="testEndpoint('GET', '/api/currency/rates/USD')">Тест USD</button>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <strong>/api/currency/rates/specific</strong> - Курсы для конкретных валют
+        <br>
+        <small>Параметр: currencies=USD,EUR,BTC</small>
+        <button class="test-btn" onclick="testEndpoint('GET', '/api/currency/rates/specific?currencies=USD,EUR,BTC')">Тест</button>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <strong>/api/parser/start</strong> - Запустить парсинг
+        <br>
+        <small>Без параметров</small>
+        <button class="test-btn" onclick="testEndpoint('POST', '/api/parser/start')">Запустить парсинг</button>
+    </div>
+
+    <div class="endpoint">
+        <span class="method post">POST</span>
+        <strong>/api/parser/custom</strong> - Кастомный парсинг
+        <br>
+        <small>JSON body с источниками</small>
+        <button class="test-btn" onclick="testCustomParser()">Тест кастомного</button>
+    </div>
+
+    <div class="endpoint">
+        <span class="method get">GET</span>
+        <strong>/health</strong> - Проверка здоровья приложения
+        <button class="test-btn" onclick="testEndpoint('GET', '/health')">Проверить</button>
+    </div>
+
+    <h2>🔧 Для разработчиков:</h2>
+    <ul>
+        <li>H2 Console: <a href="/h2-console" target="_blank">/h2-console</a></li>
+        <li>JDBC URL: <code>jdbc:h2:mem:currencydb</code></li>
+        <li>Username: <code>sa</code> (пароль пустой)</li>
+    </ul>
+
+    <div id="result" style="margin-top: 20px; padding: 10px; background: #e8f4fd; border-radius: 5px; display: none;"></div>
+</div>
+
+<script>
+    async function testEndpoint(method, url) {
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '⏳ Загрузка...';
+
+        try {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            const response = await fetch(url, options);
+            const data = await response.json();
+
+            resultDiv.innerHTML = `
+                <strong>✅ Ответ от ${url}:</strong>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        } catch (error) {
+            resultDiv.innerHTML = `
+                <strong>❌ Ошибка:</strong>
+                <pre>${error.message}</pre>
+            `;
+        }
+    }
+
+    async function testCustomParser() {
+        const resultDiv = document.getElementById('result');
+        resultDiv.style.display = 'block';
+        resultDiv.innerHTML = '⏳ Загрузка...';
+
+        try {
+            const response = await fetch('/api/parser/custom', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    sources: [
+                        "https://www.cbr-xml-daily.ru/daily_json.js",
+                        "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=rub,usd&include_24h_change=true"
+                    ],
+                    immediateSave: true,
+                    targetCurrencies: ["USD", "EUR", "BTC", "ETH"]
+                })
+            });
+
+            const data = await response.json();
+            resultDiv.innerHTML = `
+                <strong>✅ Кастомный парсинг запущен:</strong>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+        } catch (error) {
+            resultDiv.innerHTML = `
+                <strong>❌ Ошибка:</strong>
+                <pre>${error.message}</pre>
+            `;
+        }
+    }
+</script>
+</body>
+</html>
